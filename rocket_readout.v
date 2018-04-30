@@ -41,6 +41,7 @@ output        cnt_start;
 output        cnt_clr;
 
 wire   [9:0]  dbus_in_cnt;
+wire   [9:0]  dbus_out_cnt;
 wire   [9:0]  dbus_in_hk;
 
 wire   increment_cnt, increment_hk;
@@ -105,9 +106,37 @@ apes_fsm  fsm(
   .rst_n         (rst_n), 
   .collect_done  (collect_done),  
   .en_rocket_rd  (en_rocket_rd),      // enables readout of words_out
-  .rdout_done    (rdout_done ),    // indicates rocket tx complete  
+  .rdout_done    (rdout_done),    // indicates rocket tx complete  
   .cnt_start     (cnt_start),       
   .cnt_clr       (cnt_clr)       
+);
+
+/*input  [9:0] DATA;
+output [9:0] Q;
+input  WE;
+input  RE;
+input  WCLOCK;
+input  RCLOCK;
+output FULL;
+output EMPTY;
+input  RESET;
+output AEMPTY;
+output AFULL;*/
+
+wire full, empty, aempty, afull;
+
+fifo u_cnt_fifo(
+  .DATA(dbus_in_cnt),
+  .Q(dbus_out_cnt),
+  .WE(~rdout_done),
+  .RE(~en_rocket_rd),
+  .WCLOCK(clk50),
+  .RCLOCK(Cnt_Gtclk_sync),
+  .FULL(full),
+  .EMPTY(empty),
+  .RESET(rst_n),
+  .AEMPTY(aempty),
+  .AFULL(afull)
 );
 
 cnt_readout u_cnt_readout( // put words on Rocket txbus one at a time
@@ -116,7 +145,7 @@ cnt_readout u_cnt_readout( // put words on Rocket txbus one at a time
   .clr_rdout     (cnt_clr),
   .increment     (increment_cnt),     
   .words_in      (Counts),   
-  .cnt_in        (dbus_in_cnt),       
+  .cnt_in        (dbus_in_cnt),
   .rdout_done    (rdout_done)
 );
 
@@ -129,7 +158,7 @@ parallel_shifter #(// Increments readout and Tx Cntdata
   .enable        (en_rocket_rd),  // allows rocket to pull data
   .gclk          (Cnt_Gtclk_sync), 
   .loadn         (Cnt_Invload_sync), 
-  .dbus_in       (dbus_in_cnt), 
+  .dbus_in       (dbus_out_cnt), 
   .increment     (increment_cnt), 
   .serial_out    (Cnt_Data)
   );

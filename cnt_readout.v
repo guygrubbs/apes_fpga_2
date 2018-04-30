@@ -61,7 +61,7 @@ begin
 // 
          if (word_count == 53)
          begin
-         cnt_in  <= 10'h0BF;
+         cnt_in  <= 10'h2BF;
          word_count <= 7'b0;
          rdout_done <= 1'b1;
          end
